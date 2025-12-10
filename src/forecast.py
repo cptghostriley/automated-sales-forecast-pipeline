@@ -5,7 +5,7 @@ import joblib
 from pathlib import Path
 from datetime import timedelta
 import numpy as np
-from utils import build_features
+from .utils import build_features
 import tensorflow as tf
 
 DATA_PATH = Path("data/processed/sales.parquet")
@@ -79,14 +79,35 @@ def predict_with_lstm(model, df, weeks=4, seq_len=8):
         sales_s = (sales - smin)/(smax - smin + 1e-9)
         if len(sales_s) < seq_len:
             continue
-        seq = sales_s[-seq_len:].reshape(1,seq_len,1)
+        
+        # Scale exogenous features
+        exog_scaled = []
+        exog_mins, exog_maxs = [], []
+        for c in exog_cols:
+            vals = g[c].values
+            vmin, vmax = vals.min(), vals.max()
+            exog_mins.append(vmin)
+            exog_maxs.append(vmax)
+            vals_s = (vals - vmin)/(vmax - vmin + 1e-9)
+            exog_scaled.append(vals_s[-seq_len:])
+        
+        # Build sequence with sales + exogenous features
+        seq_sales = sales_s[-seq_len:].reshape(-1, 1)
+        if exog_cols:
+            exog_array = np.stack(exog_scaled, axis=1)
+            seq = np.concatenate([seq_sales, exog_array], axis=1)
+        else:
+            seq = seq_sales
+        seq = seq.reshape(1, seq_len, -1)
+        
         for i in range(weeks):
-            pred_s = model.predict(seq)[0,0]
+            pred_s = model.predict(seq, verbose=0)[0,0]
             pred = pred_s*(smax - smin) + smin
             next_date = g['date'].iloc[-1] + pd.Timedelta(weeks=i+1)
             outs.append([store, next_date, float(pred)])
-            # advance seq by appending predicted scaled value
-            seq = np.concatenate([seq[:,1:,:], np.array(pred_s).reshape(1,1,1)], axis=1)
+            # advance seq by appending predicted scaled value and last known exogenous values
+            new_timestep = np.array([pred_s] + [exog_scaled[j][-1] for j in range(len(exog_cols))]).reshape(1, 1, -1)
+            seq = np.concatenate([seq[:,1:,:], new_timestep], axis=1)
     return pd.DataFrame(outs, columns=['store','date','forecast'])
 
 def run_forecast(weeks=4):

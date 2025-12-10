@@ -10,7 +10,7 @@ from xgboost import XGBRegressor
 from prophet import Prophet
 import tensorflow as tf
 
-from utils import build_features
+from .utils import build_features
 
 DATA_PATH = Path("data/processed/sales.parquet")
 MODEL_DIR = Path("models")
@@ -28,8 +28,8 @@ def train_xgboost(df):
     X['store'] = X['store'].astype('category').cat.codes
     y = df['weekly_sales']
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15, random_state=42, shuffle=True)
-    model = XGBRegressor(n_estimators=500, learning_rate=0.05, max_depth=6, n_jobs=-1)
-    model.fit(X_train, y_train, eval_set=[(X_val,y_val)], early_stopping_rounds=50, verbose=False)
+    model = XGBRegressor(n_estimators=500, learning_rate=0.05, max_depth=6, n_jobs=-1, early_stopping_rounds=50)
+    model.fit(X_train, y_train, eval_set=[(X_val,y_val)], verbose=False)
     preds = model.predict(X_val)
     mae = mean_absolute_error(y_val, preds)
     joblib.dump(model, XGB_PATH)
