@@ -10,7 +10,10 @@ from xgboost import XGBRegressor
 from prophet import Prophet
 import tensorflow as tf
 
-from .utils import build_features
+try:
+    from .utils import build_features
+except ImportError:
+    from utils import build_features
 
 DATA_PATH = Path("data/processed/sales.parquet")
 MODEL_DIR = Path("models")

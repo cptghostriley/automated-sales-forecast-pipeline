@@ -5,7 +5,10 @@ import joblib
 from pathlib import Path
 from datetime import timedelta
 import numpy as np
-from .utils import build_features
+try:
+    from .utils import build_features
+except ImportError:
+    from utils import build_features
 import tensorflow as tf
 
 DATA_PATH = Path("data/processed/sales.parquet")
