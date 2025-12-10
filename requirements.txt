@@ -1,1 +1,11 @@
 # Python dependencies
+pandas
+numpy
+joblib
+xgboost
+scikit-learn
+prophet
+tensorflow
+streamlit
+duckdb
+matplotlib
