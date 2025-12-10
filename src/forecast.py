@@ -119,8 +119,14 @@ def run_forecast(weeks=4):
         model = joblib.load(XGB_PATH)
         return predict_with_xgb(model, df, weeks=weeks)
     elif best == 'prophet':
-        model = joblib.load(PROPHET_PATH)
-        return predict_with_prophet(model, df, weeks=weeks)
+        # Fall back to XGBoost if Prophet is not available
+        try:
+            model = joblib.load(PROPHET_PATH)
+            return predict_with_prophet(model, df, weeks=weeks)
+        except:
+            print("Prophet not available, using XGBoost instead")
+            model = joblib.load(XGB_PATH)
+            return predict_with_xgb(model, df, weeks=weeks)
     elif best == 'lstm':
         try:
             model = tf.keras.models.load_model(LSTM_PATH, compile=False)
