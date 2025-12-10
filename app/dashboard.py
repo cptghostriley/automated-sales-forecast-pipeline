@@ -7,7 +7,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import streamlit as st
 import pandas as pd
 import joblib
-import duckdb
 from src.utils import build_features
 from src.forecast import run_forecast
 
