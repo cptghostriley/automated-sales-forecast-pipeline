@@ -5,7 +5,7 @@ joblib
 xgboost
 scikit-learn
 prophet
-tensorflow
+tensorflow<2.16
 streamlit
 duckdb
 matplotlib
