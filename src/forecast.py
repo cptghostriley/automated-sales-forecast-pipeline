@@ -5,10 +5,7 @@ import joblib
 from pathlib import Path
 from datetime import timedelta
 import numpy as np
-try:
-    from .utils import build_features
-except ImportError:
-    from utils import build_features
+from .utils import build_features
 import tensorflow as tf
 
 DATA_PATH = Path("data/processed/sales.parquet")
@@ -125,7 +122,13 @@ def run_forecast(weeks=4):
         model = joblib.load(PROPHET_PATH)
         return predict_with_prophet(model, df, weeks=weeks)
     elif best == 'lstm':
-        model = tf.keras.models.load_model(LSTM_PATH)
+        try:
+            model = tf.keras.models.load_model(LSTM_PATH, compile=False)
+        except Exception as e:
+            # If LSTM fails to load, fall back to XGBoost
+            print(f"Warning: Failed to load LSTM model ({e}). Falling back to XGBoost.")
+            model = joblib.load(XGB_PATH)
+            return predict_with_xgb(model, df, weeks=weeks)
         return predict_with_lstm(model, df, weeks=weeks)
     else:
         raise ValueError("Unknown best model:", best)
